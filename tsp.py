@@ -78,7 +78,7 @@ def plot_path(idx_list):
     plt.show()
 
 
-def kOpt(idx_list, graph, grid_to_graph, k=4):
+def kOpt(idx_list, graph, grid_to_graph, k):
     optis = []
     while True:
         for indexes in tqdm(combinations(range(len(idx_list)), k),
@@ -86,9 +86,10 @@ def kOpt(idx_list, graph, grid_to_graph, k=4):
             nodes = []
             for idx in indexes:
                 nodes += [idx-1, idx]
+            nodes.append(len(idx_list)-1)
 
             dist_before = 0
-            for i in range(len(nodes)//2):
+            for i in range((len(nodes)-1)//2):
                 if nodes[2*i] == -1:
                     idx1 = 0
                 else:
@@ -96,7 +97,8 @@ def kOpt(idx_list, graph, grid_to_graph, k=4):
                 idx2 = grid_to_graph[idx_list[nodes[2*i+1]]]
                 dist_before += graph[idx1, idx2]
 
-            length = len(nodes)//2-1
+            length = len(nodes)//2
+            # TO-DO: We could consider not including the last block in k=4
             for permut, direction in product(
                     permutations(range(length)),
                     product(range(2), repeat=length)):
@@ -106,7 +108,6 @@ def kOpt(idx_list, graph, grid_to_graph, k=4):
                         new_nodes += nodes[2*idx+1:2*idx+3]
                     else:
                         new_nodes += nodes[2*idx+1:2*idx+3][::-1]
-                new_nodes += nodes[-1:]
 
                 dist_after = 0
                 for i in range(len(new_nodes)//2):
@@ -124,21 +125,23 @@ def kOpt(idx_list, graph, grid_to_graph, k=4):
         if len(optis) == 0:
             break
         nodes, save = sorted(optis, key = lambda x:-x[-1])[0]
+        # TO-DO: We could use ALL compatible ones instead of the best each time
 
         print(f'\tSaving {save} frame(s)')
         new_list = idx_list[:nodes[0]+1]
-        for i in range(len(nodes)//2-1):
+        for i in range(len(nodes)//2):
             idx1, idx2 = nodes[2*i+1:2*i+3]
             if idx1 > idx2:
                 new_list += idx_list[idx2:idx1+1][::-1]
             else:
                 new_list += idx_list[idx1:idx2+1]
-        new_list += idx_list[nodes[-1]:]
         idx_list = new_list[:]
+        if k == 4:
+            plot_path(idx_list)
         optis = []
     return idx_list
 
-def solvePath(grid):
+def solvePath(grid, max_k=3):
     graph = computeGraph(grid)
 
     graph_to_grid = {}
@@ -158,8 +161,9 @@ def solvePath(grid):
                 break
     idx_list = [graph_to_grid[i-1] for i in idx_list[1:]]
 
-    for k in [2, 3, 4]:
+    for k in range(2, max_k+1):
         idx_list = kOpt(idx_list, graph, grid_to_graph, k)
+        plot_path(idx_list)
     return idx_list
 
 
@@ -177,6 +181,6 @@ def puzzle_to_string(puzzle):
 if __name__=='__main__':
     with open('puzzles.pkl', 'rb') as f:
         puzzles = pickle.load(f)
-    grid = puzzle_to_string(puzzles[(1, 50)])
+    grid = puzzle_to_string(puzzles[(2, 1)])
     idx_list = solvePath(grid)
     plot_path(idx_list)
