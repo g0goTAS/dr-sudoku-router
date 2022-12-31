@@ -1,5 +1,7 @@
 from pygame import Vector2
 
+from positionUtils import getColumn, getRow
+
 A = '|    0,    0,    0,    0,.......A...|\n'
 LEFT = '|    0,    0,    0,    0,..L........|\n'
 RIGHT = '|    0,    0,    0,    0,...R.......|\n'
@@ -8,27 +10,34 @@ DOWN = '|    0,    0,    0,    0,.D.........|\n'
 NOTHING = '|    0,    0,    0,    0,...........|\n'
 
 
-def generateInputs(buttons, routedButtonIndexes):
+def generateInputsFromButtons(buttons, routedButtonIndexes):
+    grid = ""
+    for button in buttons:
+        grid += button.text if button.text else "_"
+    return generateInputs(grid, routedButtonIndexes)
+
+def generateInputs(grid, routedButtonIndexes):
     currentLocation = Vector2(0, 0)
     currentNumber = 5
     inputs = ''
     if not routedButtonIndexes:
         return inputs
     for index in routedButtonIndexes:
-        button = list(filter(lambda searchButton: searchButton.index == index, buttons))[0]
-        nextLocation = Vector2(button.x, button.y)
+        indexInt = int(index)
+        currNumber = grid[indexInt]
+        x, y = getRow(indexInt), getColumn(indexInt)
+        nextLocation = Vector2(x, y)
         inputs += getInputsToNextSquare(currentLocation, nextLocation)
-        inputs += getInputsToChooseNextNumber(currentNumber, int(button.text))
-        currentNumber = int(button.text)
+        inputs += getInputsToChooseNextNumber(currentNumber, int(currNumber))
+        currentNumber = int(currNumber)
         currentLocation = nextLocation
 
-    if len(list(filter(lambda button: button.text, buttons))) == len(routedButtonIndexes):
-        inputs += NOTHING * 3
-        inputs += A
-        inputs += NOTHING * 73
-        inputs += A
-        inputs += NOTHING * 129
-        inputs += A
+    inputs += NOTHING * 3
+    inputs += A
+    inputs += NOTHING * 73
+    inputs += A
+    inputs += NOTHING * 129
+    inputs += A
     return inputs
 
 

@@ -1,5 +1,7 @@
 import pickle
 from itertools import product, combinations, permutations
+
+from inputGenerator import generateInputs
 from solver import solve
 from positionUtils import getColumn, getRow
 import numpy as np
@@ -8,7 +10,7 @@ from tqdm import tqdm
 from math import comb
 
 
-def computeGraph(grid):
+def computeGraph(grid, solution):
     num_close = {1: {1, 2, 3, 4, 7},
                  2: {1, 2, 3, 5, 8},
                  3: {1, 2, 3, 6, 9},
@@ -19,7 +21,6 @@ def computeGraph(grid):
                  8: {7, 8, 9, 2, 5},
                  9: {7, 8, 9, 3, 6}}
 
-    solution = solve(grid)
     size = grid.count('_')
     graph = np.zeros((size+1, size), dtype=int)
     i_g = -1
@@ -78,7 +79,7 @@ def plot_path(idx_list):
     plt.show()
 
 
-def kOpt(idx_list, graph, grid_to_graph, k):
+def kOpt(idx_list, graph, grid_to_graph, grid, k):
     optis = []
     while True:
         for indexes in tqdm(combinations(range(len(idx_list)), k),
@@ -136,13 +137,13 @@ def kOpt(idx_list, graph, grid_to_graph, k):
             else:
                 new_list += idx_list[idx1:idx2+1]
         idx_list = new_list[:]
-        if k == 4:
-            plot_path(idx_list)
+        print("\tNew total: {} frames".format(generateInputs(grid, idx_list).count("\n")))
         optis = []
     return idx_list
 
-def solvePath(grid, max_k=3):
-    graph = computeGraph(grid)
+def solvePath(grid, max_k=4):
+    solution = solve(grid)
+    graph = computeGraph(grid, solution)
 
     graph_to_grid = {}
     i_g = -1
@@ -162,8 +163,8 @@ def solvePath(grid, max_k=3):
     idx_list = [graph_to_grid[i-1] for i in idx_list[1:]]
 
     for k in range(2, max_k+1):
-        idx_list = kOpt(idx_list, graph, grid_to_graph, k)
-        plot_path(idx_list)
+        idx_list = kOpt(idx_list, graph, grid_to_graph, solution, k)
+        # plot_path(idx_list) plotting stops the execution in PyCharm
     return idx_list
 
 
