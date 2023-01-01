@@ -208,8 +208,17 @@ def puzzle_to_string(puzzle):
 
 
 if __name__=='__main__':
+    with open('paths.pkl', 'rb') as f:
+        paths = pickle.load(f)
     with open('puzzles.pkl', 'rb') as f:
         puzzles = pickle.load(f)
-    grid = puzzle_to_string(puzzles[(6, 9)])
-    idx_list = solvePath(grid)
-    plot_path(idx_list)
+    for puzzle_idx in product(range(1, 21), range(1, 50)):
+        if puzzle_idx in paths:
+            continue
+        print(f'Computing path for puzzle {puzzle_idx}.')
+        grid = puzzle_to_string(puzzles[puzzle_idx])
+        idx_list = solvePath(grid)
+        paths[puzzle_idx] = idx_list
+        with open('paths.pkl', 'wb') as f:
+            pickle.dump(paths, f)
+        # plot_path(idx_list)
