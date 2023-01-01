@@ -1,6 +1,5 @@
 import pickle
 from itertools import product, combinations, permutations
-
 from inputGenerator import generateInputs
 from solver import solve
 from positionUtils import getColumn, getRow
@@ -79,8 +78,10 @@ def plot_path(idx_list):
     plt.show()
 
 
-def kOpt(idx_list, graph, grid_to_graph, grid, k):
+def kOpt(idx_list, graph, grid_to_graph, solution, k):
     optis = []
+    graph = {(i, j): graph[i, j]
+             for i,j in product(range(graph.shape[0]), range(graph.shape[1]))}
     while True:
         for indexes in tqdm(combinations(range(len(idx_list)), k),
                             total=comb(len(idx_list), k)):
@@ -99,35 +100,63 @@ def kOpt(idx_list, graph, grid_to_graph, grid, k):
                 dist_before += graph[idx1, idx2]
 
             length = len(nodes)//2
-            # TO-DO: We could consider not including the last block in k=4
+            keep_end = indexes[-1] != len(idx_list)-1
+            # Flag to keep end locked
+            keep_end = False
+            if keep_end:
+                length -= 1
+
+            first_permut = True
             for permut, direction in product(
                     permutations(range(length)),
                     product(range(2), repeat=length)):
-                new_nodes = nodes[0:1]
+                if first_permut:
+                    first_permut = False
+                    continue
+                prune_flag = False
+                dist_after = 0
+                if nodes[0] == -1:
+                    idx1 = 0
+                else:
+                    idx1 = grid_to_graph[idx_list[nodes[0]]]+1
                 for i, idx in enumerate(permut):
                     if direction[i] == 0:
-                        new_nodes += nodes[2*idx+1:2*idx+3]
+                        idx2 = grid_to_graph[idx_list[nodes[2*idx+1]]]
+                        dist_after += graph[idx1, idx2]
+                        if dist_after >= dist_before:
+                            prune_flag = True
+                            break
+                        idx1 = grid_to_graph[idx_list[nodes[2*idx+2]]]+1
                     else:
-                        new_nodes += nodes[2*idx+1:2*idx+3][::-1]
-
-                dist_after = 0
-                for i in range(len(new_nodes)//2):
-                    if new_nodes[2*i] == -1:
-                        idx1 = 0
-                    else:
-                        idx1 = grid_to_graph[idx_list[new_nodes[2*i]]]+1
-                    idx2 = grid_to_graph[idx_list[new_nodes[2*i+1]]]
+                        idx2 = grid_to_graph[idx_list[nodes[2*idx+2]]]
+                        dist_after += graph[idx1, idx2]
+                        if dist_after >= dist_before:
+                            prune_flag = True
+                            break
+                        idx1 = grid_to_graph[idx_list[nodes[2*idx+1]]]+1
+                if prune_flag:
+                    continue
+                if keep_end:
+                    idx2 = grid_to_graph[idx_list[nodes[-2]]]
                     dist_after += graph[idx1, idx2]
 
                 save = dist_before - dist_after
                 if save > 0:
+                    new_nodes = nodes[0:1]
+                    for i, idx in enumerate(permut):
+                        if direction[i] == 0:
+                            new_nodes += nodes[2*idx+1: 2*idx+3]
+                        else:
+                            new_nodes += nodes[2*idx+1: 2*idx+3][::-1]
+                    if keep_end:
+                        new_nodes += nodes[-2:]
                     optis.append((new_nodes, save))
 
         if len(optis) == 0:
             break
         nodes, save = sorted(optis, key = lambda x:-x[-1])[0]
-        # TO-DO: We could use ALL compatible ones instead of the best each time
-
+        # TO-DO: We could use ALL compatible ones instead of the best each time (6-9)
+        # Or pick the first we find by searching from longer indexes first
         print(f'\tSaving {save} frame(s)')
         new_list = idx_list[:nodes[0]+1]
         for i in range(len(nodes)//2):
@@ -137,7 +166,7 @@ def kOpt(idx_list, graph, grid_to_graph, grid, k):
             else:
                 new_list += idx_list[idx1:idx2+1]
         idx_list = new_list[:]
-        print("\tNew total: {} frames".format(generateInputs(grid, idx_list).count("\n")))
+        print("\tNew total: {} frames".format(generateInputs(solution, idx_list).count("\n")))
         optis = []
     return idx_list
 
@@ -164,7 +193,6 @@ def solvePath(grid, max_k=4):
 
     for k in range(2, max_k+1):
         idx_list = kOpt(idx_list, graph, grid_to_graph, solution, k)
-        # plot_path(idx_list) plotting stops the execution in PyCharm
     return idx_list
 
 
@@ -182,6 +210,6 @@ def puzzle_to_string(puzzle):
 if __name__=='__main__':
     with open('puzzles.pkl', 'rb') as f:
         puzzles = pickle.load(f)
-    grid = puzzle_to_string(puzzles[(2, 1)])
+    grid = puzzle_to_string(puzzles[(6, 9)])
     idx_list = solvePath(grid)
     plot_path(idx_list)
