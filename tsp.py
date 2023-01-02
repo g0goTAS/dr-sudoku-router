@@ -172,6 +172,8 @@ def kOpt(idx_list, graph, grid_to_graph, solution, k):
 
 def solvePath(grid, max_k=4):
     solution = solve(grid)
+    if '_' in solution:
+        raise Exception('Puzzle not solved')
     graph = computeGraph(grid, solution)
 
     graph_to_grid = {}
@@ -217,7 +219,11 @@ if __name__=='__main__':
             continue
         print(f'Computing path for puzzle {puzzle_idx}.')
         grid = puzzle_to_string(puzzles[puzzle_idx])
-        idx_list = solvePath(grid)
+        try:
+            idx_list = solvePath(grid)
+        except Exception as e:
+            print(e)
+            continue
         paths[puzzle_idx] = idx_list
         with open('paths.pkl', 'wb') as f:
             pickle.dump(paths, f)
