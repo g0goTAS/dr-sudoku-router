@@ -1,8 +1,8 @@
 from pygame import Vector2
-
 from positionUtils import getColumn, getRow
 
 A = '|    0,    0,    0,    0,.......A...|\n'
+R = '|    0,    0,    0,    0,.........r.|\n'
 LEFT = '|    0,    0,    0,    0,..L........|\n'
 RIGHT = '|    0,    0,    0,    0,...R.......|\n'
 UP = '|    0,    0,    0,    0,U..........|\n'
@@ -16,7 +16,7 @@ def generateInputsFromButtons(buttons, routedButtonIndexes):
         grid += button.text if button.text else "_"
     return generateInputs(grid, routedButtonIndexes)
 
-def generateInputs(grid, routedButtonIndexes):
+def generateInputs(grid, routedButtonIndexes, next_level=False):
     currentLocation = Vector2(0, 0)
     currentNumber = 5
     inputs = ''
@@ -25,7 +25,7 @@ def generateInputs(grid, routedButtonIndexes):
     for index in routedButtonIndexes:
         indexInt = int(index)
         currNumber = grid[indexInt]
-        x, y = getRow(indexInt), getColumn(indexInt)
+        x, y = getColumn(indexInt), getRow(indexInt)
         nextLocation = Vector2(x, y)
         inputs += getInputsToNextSquare(currentLocation, nextLocation)
         inputs += getInputsToChooseNextNumber(currentNumber, int(currNumber))
@@ -35,9 +35,12 @@ def generateInputs(grid, routedButtonIndexes):
     inputs += NOTHING * 3
     inputs += A
     inputs += NOTHING * 73
+    if next_level:
+        inputs += R
     inputs += A
     inputs += NOTHING * 129
     inputs += A
+    inputs += NOTHING * 2
     return inputs
 
 

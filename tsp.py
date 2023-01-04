@@ -214,7 +214,7 @@ if __name__=='__main__':
         paths = pickle.load(f)
     with open('puzzles.pkl', 'rb') as f:
         puzzles = pickle.load(f)
-    for puzzle_idx in product(range(1, 21), range(1, 50)):
+    for puzzle_idx in product(range(1, 21), range(1, 51)):
         if puzzle_idx in paths:
             continue
         print(f'Computing path for puzzle {puzzle_idx}.')
@@ -227,4 +227,6 @@ if __name__=='__main__':
         paths[puzzle_idx] = idx_list
         with open('paths.pkl', 'wb') as f:
             pickle.dump(paths, f)
+        if puzzle_idx[0] >= 16:
+            break
         # plot_path(idx_list)
