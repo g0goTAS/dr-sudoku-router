@@ -227,6 +227,4 @@ if __name__=='__main__':
         paths[puzzle_idx] = idx_list
         with open('paths.pkl', 'wb') as f:
             pickle.dump(paths, f)
-        if puzzle_idx[0] >= 16:
-            break
         # plot_path(idx_list)

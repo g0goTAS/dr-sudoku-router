@@ -5,7 +5,7 @@ from positionUtils import getColumn, getRow, getCage, getSpot
 ALL_NUMBERS = ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
 
 
-def solve(grid):
+def solve(grid, verbose=True):
     potentialNumberList = initialiseRemainingNumberList(grid)
     changeInLastIteration = True
     iterationCount = 0
@@ -19,20 +19,21 @@ def solve(grid):
         potentialNumberList, intermediateColumnSolveChange = intermediateSolvePerColumn(potentialNumberList)
         potentialNumberList, xWingRowChange = xWingByRow(potentialNumberList)
         potentialNumberList, xWingColumnChange = xWingByColumn(potentialNumberList)
-        potentialNumberList, pointingPairsByRowChange = pointingPairsByRow(potentialNumberList)
-        potentialNumberList, pointingPairsByColumnChange = pointingPairsByColumn(potentialNumberList)
-        potentialNumberList, nakedPairsByColumnChange = nakedPairsByColumn(potentialNumberList)
-        potentialNumberList, nakedPairsByRowChange = nakedPairsByRow(potentialNumberList)
+        potentialNumberList, pointingPairsByRowChange = pointingPairsByRow(potentialNumberList, verbose=verbose)
+        potentialNumberList, pointingPairsByColumnChange = pointingPairsByColumn(potentialNumberList, verbose=verbose)
+        potentialNumberList, nakedPairsByColumnChange = nakedPairsByColumn(potentialNumberList, verbose=verbose)
+        potentialNumberList, nakedPairsByRowChange = nakedPairsByRow(potentialNumberList, verbose=verbose)
         # potentialNumberList, hiddenPairByColumnChange = hiddenPairsByColumn(potentialNumberList)
 
         changeInLastIteration = squareSolveChange or rowSolveChange or columnSolveChange or cageSolveChange or intermediateRowSolveChange or intermediateColumnSolveChange or xWingRowChange or xWingColumnChange or pointingPairsByRowChange or pointingPairsByColumnChange or nakedPairsByColumnChange or nakedPairsByRowChange # or hiddenPairByColumnChange
 
         gridString = gridToString(potentialNumberList)
-        if not changeInLastIteration and gridString.count("_") != 0:
+        if not changeInLastIteration and gridString.count("_") != 0 and verbose:
             for i in range(0, 81):
                 print(potentialNumberList[i])
-        print("\n" + str(iterationCount))
-        print(gridString)
+        if verbose:
+            print("\n" + str(iterationCount))
+            print(gridString)
     return gridToString(potentialNumberList)
 
 
@@ -81,7 +82,7 @@ def hiddenPairsByColumn(potentialNumberList):
 
 
 
-def nakedPairsByColumn(potentialNumberList):
+def nakedPairsByColumn(potentialNumberList, verbose=True):
     change = False
     solvedPotentialNumberList = deepcopy(potentialNumberList)
     for scanColumn in range(0, 9):
@@ -91,7 +92,8 @@ def nakedPairsByColumn(potentialNumberList):
                 for matchPairRow in range(scanRow + 1, 9):
                     matchSpot = getSpot(scanColumn, matchPairRow)
                     if solvedPotentialNumberList[spot] == solvedPotentialNumberList[matchSpot]:
-                        print(spot, matchSpot)
+                        if verbose:
+                            print(spot, matchSpot)
                         for eliminationRow in range(0, 9):
                             eliminationSpot = getSpot(scanColumn, eliminationRow)
                             if eliminationSpot not in [spot, matchSpot]:
@@ -128,7 +130,7 @@ def nakedPairsByCage(potentialNumberList):
     return solvedPotentialNumberList, change
 
 
-def nakedPairsByRow(potentialNumberList):
+def nakedPairsByRow(potentialNumberList, verbose=True):
     change = False
     solvedPotentialNumberList = deepcopy(potentialNumberList)
     for scanRow in range(0, 9):
@@ -138,7 +140,8 @@ def nakedPairsByRow(potentialNumberList):
                 for matchPairColumn in range(scanColumn + 1, 9):
                     matchSpot = getSpot(matchPairColumn, scanRow)
                     if solvedPotentialNumberList[spot] == solvedPotentialNumberList[matchSpot]:
-                        print(spot, matchSpot)
+                        if verbose:
+                            print(spot, matchSpot)
                         for eliminationColumn in range(0, 9):
                             eliminationSpot = getSpot(eliminationColumn, scanRow)
                             if eliminationSpot not in [spot, matchSpot]:
@@ -149,7 +152,7 @@ def nakedPairsByRow(potentialNumberList):
     return solvedPotentialNumberList, change
 
 
-def pointingPairsByRow(potentialNumberList):
+def pointingPairsByRow(potentialNumberList, verbose=True):
     change = False
     solvedPotentialNumberList = deepcopy(potentialNumberList)
     for number in ALL_NUMBERS:
@@ -164,14 +167,14 @@ def pointingPairsByRow(potentialNumberList):
                 for i in range(0, 81):
                     if getCage(i) == possibleCages[0] and not getRow(i) == scanRow and number in \
                             solvedPotentialNumberList[i]:
-                        if i == 10 and number == 3:
+                        if i == 10 and number == 3 and verbose:
                             print("e")
                         solvedPotentialNumberList[i].remove(number)
                         change = True
     return solvedPotentialNumberList, change
 
 
-def pointingPairsByColumn(potentialNumberList):
+def pointingPairsByColumn(potentialNumberList, verbose=True):
     change = False
     solvedPotentialNumberList = deepcopy(potentialNumberList)
     for number in ALL_NUMBERS:
@@ -186,7 +189,7 @@ def pointingPairsByColumn(potentialNumberList):
                 for i in range(0, 81):
                     if getCage(i) == possibleCages[0] and not getColumn(i) == scanColumn and number in \
                             solvedPotentialNumberList[i]:
-                        if i == 10 and number == 3:
+                        if i == 10 and number == 3 and verbose:
                             print("f")
                         solvedPotentialNumberList[i].remove(number)
                         change = True
