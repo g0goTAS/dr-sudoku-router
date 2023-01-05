@@ -1,12 +1,11 @@
 from copy import deepcopy
-from itertools import combinations
 
 from positionUtils import getColumn, getRow, getCage, getSpot
 
 ALL_NUMBERS = ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
 
 
-def solve(grid):
+def solve(grid, verbose=True):
     potentialNumberList = initialiseRemainingNumberList(grid)
     changeInLastIteration = True
     iterationCount = 0
@@ -31,11 +30,12 @@ def solve(grid):
         changeInLastIteration = squareSolveChange or rowSolveChange or columnSolveChange or cageSolveChange or intermediateRowSolveChange or intermediateColumnSolveChange or xWingRowChange or xWingColumnChange or pointingPairsByRowChange or pointingPairsByColumnChange or nakedPairsByColumnChange or nakedPairsByRowChange or nakedPairsByCageChange or nakedTripleByCageChange or hiddenPairByColumnChange or hiddenPairByRowChange
 
         gridString = gridToString(potentialNumberList)
-        if not changeInLastIteration and gridString.count("_") != 0:
+        if not changeInLastIteration and gridString.count("_") != 0 and verbose:
             for i in range(0, 81):
                 print(potentialNumberList[i])
-        print("\n" + str(iterationCount))
-        print(gridString)
+        if verbose:
+            print("\n" + str(iterationCount))
+            print(gridString)
     return gridToString(potentialNumberList)
 
 
@@ -119,7 +119,7 @@ def hiddenPairsByRow(potentialNumberList):
 
 
 
-def nakedPairsByColumn(potentialNumberList):
+def nakedPairsByColumn(potentialNumberList, verbose=True):
     change = False
     solvedPotentialNumberList = deepcopy(potentialNumberList)
     for scanColumn in range(0, 9):
@@ -184,7 +184,7 @@ def nakedPairsByCage(potentialNumberList):
     return solvedPotentialNumberList, change
 
 
-def nakedPairsByRow(potentialNumberList):
+def nakedPairsByRow(potentialNumberList, verbose=True):
     change = False
     solvedPotentialNumberList = deepcopy(potentialNumberList)
     for scanRow in range(0, 9):
@@ -204,7 +204,7 @@ def nakedPairsByRow(potentialNumberList):
     return solvedPotentialNumberList, change
 
 
-def pointingPairsByRow(potentialNumberList):
+def pointingPairsByRow(potentialNumberList, verbose=True):
     change = False
     solvedPotentialNumberList = deepcopy(potentialNumberList)
     for number in ALL_NUMBERS:
@@ -219,14 +219,14 @@ def pointingPairsByRow(potentialNumberList):
                 for i in range(0, 81):
                     if getCage(i) == possibleCages[0] and not getRow(i) == scanRow and number in \
                             solvedPotentialNumberList[i]:
-                        if i == 10 and number == 3:
+                        if i == 10 and number == 3 and verbose:
                             print("e")
                         solvedPotentialNumberList[i].remove(number)
                         change = True
     return solvedPotentialNumberList, change
 
 
-def pointingPairsByColumn(potentialNumberList):
+def pointingPairsByColumn(potentialNumberList, verbose=True):
     change = False
     solvedPotentialNumberList = deepcopy(potentialNumberList)
     for number in ALL_NUMBERS:
@@ -241,7 +241,7 @@ def pointingPairsByColumn(potentialNumberList):
                 for i in range(0, 81):
                     if getCage(i) == possibleCages[0] and not getColumn(i) == scanColumn and number in \
                             solvedPotentialNumberList[i]:
-                        if i == 10 and number == 3:
+                        if i == 10 and number == 3 and verbose:
                             print("f")
                         solvedPotentialNumberList[i].remove(number)
                         change = True

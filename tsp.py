@@ -214,7 +214,7 @@ if __name__=='__main__':
         paths = pickle.load(f)
     with open('puzzles.pkl', 'rb') as f:
         puzzles = pickle.load(f)
-    for puzzle_idx in product(range(1, 21), range(1, 50)):
+    for puzzle_idx in product(range(1, 21), range(1, 51)):
         if puzzle_idx in paths:
             continue
         print(f'Computing path for puzzle {puzzle_idx}.')
