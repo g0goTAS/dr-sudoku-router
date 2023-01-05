@@ -1,4 +1,5 @@
 from copy import deepcopy
+from itertools import combinations
 
 from positionUtils import getColumn, getRow, getCage, getSpot
 
@@ -23,9 +24,11 @@ def solve(grid):
         potentialNumberList, pointingPairsByColumnChange = pointingPairsByColumn(potentialNumberList)
         potentialNumberList, nakedPairsByColumnChange = nakedPairsByColumn(potentialNumberList)
         potentialNumberList, nakedPairsByRowChange = nakedPairsByRow(potentialNumberList)
-        # potentialNumberList, hiddenPairByColumnChange = hiddenPairsByColumn(potentialNumberList)
-
-        changeInLastIteration = squareSolveChange or rowSolveChange or columnSolveChange or cageSolveChange or intermediateRowSolveChange or intermediateColumnSolveChange or xWingRowChange or xWingColumnChange or pointingPairsByRowChange or pointingPairsByColumnChange or nakedPairsByColumnChange or nakedPairsByRowChange # or hiddenPairByColumnChange
+        potentialNumberList, nakedPairsByCageChange = nakedPairsByCage(potentialNumberList)
+        potentialNumberList, nakedTripleByCageChange = nakedTripleByCage(potentialNumberList)
+        potentialNumberList, hiddenPairByColumnChange = hiddenPairsByColumn(potentialNumberList)
+        potentialNumberList, hiddenPairByRowChange = hiddenPairsByRow(potentialNumberList)
+        changeInLastIteration = squareSolveChange or rowSolveChange or columnSolveChange or cageSolveChange or intermediateRowSolveChange or intermediateColumnSolveChange or xWingRowChange or xWingColumnChange or pointingPairsByRowChange or pointingPairsByColumnChange or nakedPairsByColumnChange or nakedPairsByRowChange or nakedPairsByCageChange or nakedTripleByCageChange or hiddenPairByColumnChange or hiddenPairByRowChange
 
         gridString = gridToString(potentialNumberList)
         if not changeInLastIteration and gridString.count("_") != 0:
@@ -52,14 +55,16 @@ def hiddenPairsByColumn(potentialNumberList):
 
     for scanColumn in range(0, 9):
         for number1 in range(0, 8):
+            number1 = str(number1)
             spotsNumber1 = []
             for scanRow in range(0, 9):
                 if number1 in solvedPotentialNumberList[getSpot(scanColumn, scanRow)]:
                     spotsNumber1.append(getSpot(scanColumn, scanRow))
             if len(spotsNumber1) != 2:
                 continue
-            spotsNumber2 = []
-            for number2 in range(number1 + 1, 9):
+            for number2 in range(int(number1) + 1, 9):
+                spotsNumber2 = []
+                number2 = str(number2)
                 for scanRow in range(0, 9):
                     if number2 in solvedPotentialNumberList[getSpot(scanColumn, scanRow)]:
                         spotsNumber2.append(getSpot(scanColumn, scanRow))
@@ -67,13 +72,46 @@ def hiddenPairsByColumn(potentialNumberList):
                     continue
                 if spotsNumber1 != spotsNumber2:
                     continue
-
                 for eliminationNumber in range(0, 9):
+                    eliminationNumber = str(eliminationNumber)
                     if eliminationNumber == number1 or eliminationNumber == number2:
                         continue
                     for eliminationSpot in spotsNumber1:
                         if eliminationNumber in solvedPotentialNumberList[eliminationSpot]:
-                            solvedPotentialNumberList.remove(eliminationNumber)
+                            solvedPotentialNumberList[eliminationSpot].remove(eliminationNumber)
+                            change = True
+    return solvedPotentialNumberList, change
+
+def hiddenPairsByRow(potentialNumberList):
+    change = False
+    solvedPotentialNumberList = deepcopy(potentialNumberList)
+
+    for scanRow in range(0, 9):
+        for number1 in range(0, 8):
+            number1 = str(number1)
+            spotsNumber1 = []
+            for scanColumn in range(0, 9):
+                if number1 in solvedPotentialNumberList[getSpot(scanColumn, scanRow)]:
+                    spotsNumber1.append(getSpot(scanColumn, scanRow))
+            if len(spotsNumber1) != 2:
+                continue
+            for number2 in range(int(number1) + 1, 9):
+                spotsNumber2 = []
+                number2 = str(number2)
+                for scanColumn in range(0, 9):
+                    if number2 in solvedPotentialNumberList[getSpot(scanColumn, scanRow)]:
+                        spotsNumber2.append(getSpot(scanColumn, scanRow))
+                if len(spotsNumber2) != 2:
+                    continue
+                if spotsNumber1 != spotsNumber2:
+                    continue
+                for eliminationNumber in range(0, 9):
+                    eliminationNumber = str(eliminationNumber)
+                    if eliminationNumber == number1 or eliminationNumber == number2:
+                        continue
+                    for eliminationSpot in spotsNumber1:
+                        if eliminationNumber in solvedPotentialNumberList[eliminationSpot]:
+                            solvedPotentialNumberList[eliminationSpot].remove(eliminationNumber)
                             change = True
     return solvedPotentialNumberList, change
 
@@ -91,7 +129,6 @@ def nakedPairsByColumn(potentialNumberList):
                 for matchPairRow in range(scanRow + 1, 9):
                     matchSpot = getSpot(scanColumn, matchPairRow)
                     if solvedPotentialNumberList[spot] == solvedPotentialNumberList[matchSpot]:
-                        print(spot, matchSpot)
                         for eliminationRow in range(0, 9):
                             eliminationSpot = getSpot(scanColumn, eliminationRow)
                             if eliminationSpot not in [spot, matchSpot]:
@@ -101,6 +138,25 @@ def nakedPairsByColumn(potentialNumberList):
                                         change = True
     return solvedPotentialNumberList, change
 
+def nakedTripleByCage(potentialNumberList):
+    change = False
+    solvedPotentialNumberList = deepcopy(potentialNumberList)
+    for cage in range(0, 9):
+        triplesForCage = []
+        for i in range(0, 81):
+            if getCage(i) == cage and len(solvedPotentialNumberList[i]) == 3:
+                triplesForCage.append(solvedPotentialNumberList[i])
+        for triple in triplesForCage:
+            if triplesForCage.count(triple) == 3:
+                for i in range(0, 81):
+                    if getCage(i) == cage and solvedPotentialNumberList[i] != triple:
+                        for number in triple:
+                            if number in solvedPotentialNumberList[i]:
+                                solvedPotentialNumberList[i].remove(number)
+                                change = True
+    return solvedPotentialNumberList, change
+
+
 def nakedPairsByCage(potentialNumberList):
     change = False
     solvedPotentialNumberList = deepcopy(potentialNumberList)
@@ -108,7 +164,7 @@ def nakedPairsByCage(potentialNumberList):
         if len(solvedPotentialNumberList[i]) != 2:
             continue
         for j in range(i + 1, 81):
-            if len(solvedPotentialNumberList) != 2:
+            if len(solvedPotentialNumberList[j]) != 2:
                 continue
             if getCage(i) != getCage(j):
                 continue
@@ -138,7 +194,6 @@ def nakedPairsByRow(potentialNumberList):
                 for matchPairColumn in range(scanColumn + 1, 9):
                     matchSpot = getSpot(matchPairColumn, scanRow)
                     if solvedPotentialNumberList[spot] == solvedPotentialNumberList[matchSpot]:
-                        print(spot, matchSpot)
                         for eliminationColumn in range(0, 9):
                             eliminationSpot = getSpot(eliminationColumn, scanRow)
                             if eliminationSpot not in [spot, matchSpot]:
