@@ -8,6 +8,8 @@ from matplotlib import pyplot as plt
 from tqdm import tqdm
 from math import comb
 import random
+import time
+import os
 
 
 def computeGraph(grid, solution):
@@ -72,7 +74,8 @@ def plot_path(idx_list):
     for i in idx_list:
         pos = (getColumn(i), 9-getRow(i))
         if abs(pos[0]-prev_pos[0])+abs(pos[1]-prev_pos[1]) > 5:
-            plt.plot([pos[0], prev_pos[0]], [pos[1], prev_pos[1]], c='gray', ls='--')
+            plt.plot([pos[0], prev_pos[0]],
+                     [pos[1], prev_pos[1]], c='gray', ls='--')
         else:
             plt.plot([pos[0], prev_pos[0]], [pos[1], prev_pos[1]], c='k')
         prev_pos = pos
@@ -82,7 +85,7 @@ def plot_path(idx_list):
 def kOpt(idx_list, graph, grid_to_graph, solution, k, verbose=True):
     optis = []
     graph = {(i, j): graph[i, j]
-             for i,j in product(range(graph.shape[0]), range(graph.shape[1]))}
+             for i, j in product(range(graph.shape[0]), range(graph.shape[1]))}
     while True:
         indexes_iter = combinations(range(len(idx_list)), k)
         if verbose:
@@ -157,9 +160,7 @@ def kOpt(idx_list, graph, grid_to_graph, solution, k, verbose=True):
 
         if len(optis) == 0:
             break
-        nodes, save = sorted(optis, key = lambda x:-x[-1])[0]
-        # TO-DO: We could use ALL compatible ones instead of the best each time (6-9)
-        # Or pick the first we find by searching from longer indexes first
+        nodes, save = sorted(optis, key=lambda x: -x[-1])[0]
         if verbose:
             print(f'\tSaving {save} frame(s)')
         new_list = idx_list[:nodes[0]+1]
@@ -171,12 +172,14 @@ def kOpt(idx_list, graph, grid_to_graph, solution, k, verbose=True):
                 new_list += idx_list[idx1:idx2+1]
         idx_list = new_list[:]
         if verbose:
-            print("\tNew total: {} frames".format(generateInputs(solution, idx_list).count("\n")))
+            length = generateInputs(solution, idx_list).count("\n")
+            print(f"\tNew total: {length} frames")
         optis = []
     return idx_list
 
+
 def solvePath(grid, max_k=4, n_thermal=100):
-    solution = solve(grid)
+    solution = solve(grid, verbose=False)
     if '_' in solution:
         raise Exception('Puzzle not solved')
     graph = computeGraph(grid, solution)
@@ -200,19 +203,27 @@ def solvePath(grid, max_k=4, n_thermal=100):
 
     # Annealing filter for 3-opt
     optimal_path = (idx_list, generateInputs(solution, idx_list).count("\n"))
+    n_paths = 1
     print(f'Thermal annealing of {max_k-1}-opt')
     for _ in tqdm(range(n_thermal)):
         idx_list_shuffle = idx_list[:]
         random.shuffle(idx_list_shuffle)
         for k in range(2, max_k):
-            idx_list_shuffle = kOpt(idx_list_shuffle, graph, grid_to_graph, solution, k, verbose=False)
+            idx_list_shuffle = kOpt(idx_list_shuffle, graph, grid_to_graph,
+                                    solution, k, verbose=False)
         length = generateInputs(solution, idx_list_shuffle).count("\n")
+        if length == optimal_path[1]:
+            n_paths += 1
         if length < optimal_path[1]:
             optimal_path = (idx_list_shuffle[:], length)
+            n_paths = 1
 
     print(f'Single {max_k}-opt')
     idx_list = kOpt(optimal_path[0], graph, grid_to_graph, solution, max_k)
-    return idx_list
+    save_4opt = length - generateInputs(solution, idx_list).count("\n")
+    info = {'n_paths': n_paths,
+            'save_4opt': save_4opt}
+    return idx_list, info
 
 
 def puzzle_to_string(puzzle):
@@ -226,22 +237,32 @@ def puzzle_to_string(puzzle):
     return grid
 
 
-if __name__=='__main__':
-    with open('paths.pkl', 'rb') as f:
-        paths = pickle.load(f)
+if __name__ == '__main__':
+    if os.path.exists('paths.pkl'):
+        with open('paths.pkl', 'rb') as f:
+            paths = pickle.load(f)
+    else:
+        paths = {}
     with open('puzzles.pkl', 'rb') as f:
         puzzles = pickle.load(f)
+    log_file = open('logs.txt', 'w+')
     for puzzle_idx in product(range(1, 21), range(1, 51)):
         if puzzle_idx in paths:
             continue
+        st = time.time()
         print(f'Computing path for puzzle {puzzle_idx}.')
         grid = puzzle_to_string(puzzles[puzzle_idx])
         try:
-            idx_list = solvePath(grid)
+            idx_list, info = solvePath(grid)
         except Exception as e:
             print(e)
             continue
         paths[puzzle_idx] = idx_list
+        compute_time = st - time.time()
+        _ = log_file.write(
+            f'{puzzle_idx}: {info["n_paths"]} annealed found. '
+            f'{info["save_4opt"]} 4opt saved. {compute_time} s'
+            )
         with open('paths.pkl', 'wb') as f:
             pickle.dump(paths, f)
         # plot_path(idx_list)

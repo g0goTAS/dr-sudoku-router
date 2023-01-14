@@ -5,7 +5,7 @@ import inputGenerator as ig
 from itertools import product
 from tqdm import tqdm
 
-if __name__=='__main__':
+if __name__ == '__main__':
 
     all_inputs = """[Input]
     LogKey:#Tilt X|Tilt Y|Tilt Z|Light Sensor|Up|Down|Left|Right|Start|Select|B|A|L|R|Power|

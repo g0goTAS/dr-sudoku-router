@@ -30,8 +30,8 @@ for puzzle_idx, idx_list in paths.items():
     level_inputs = level_inputs[:level_inputs.index(level_trim)]
 
     old_inputs = ig.generateInputs(solution,
-                                     old_list,
-                                     next_level=next_level)
+                                   old_list,
+                                   next_level=next_level)
     old_inputs = old_inputs[:old_inputs.index(level_trim)]
     compare_data[puzzle_idx] = (old_inputs.count('\n'),
                                 level_inputs.count('\n'))
@@ -44,7 +44,7 @@ print('TOTAL SAVED', sum(g-l for (g, l) in compare_data.values()))
 # COMPARE TO GOGO MANUAL
 compare_data = {}
 for i, gogo_input in enumerate(manual_data[1:]):
-    puzzle_idx = (i//50+1, i%50+1)
+    puzzle_idx = (i//50+1, i % 50+1)
     if puzzle_idx not in paths:
         continue
 
@@ -54,8 +54,8 @@ for i, gogo_input in enumerate(manual_data[1:]):
     solution = solve(grid, verbose=False)
     next_level = puzzle_idx[1] == 50
     level_inputs = ig.generateInputs(solution,
-                                        paths[puzzle_idx],
-                                        next_level=next_level)
+                                     paths[puzzle_idx],
+                                     next_level=next_level)
     level_inputs = level_inputs[:level_inputs.index(level_trim)]
 
     compare_data[puzzle_idx] = (gogo_input.count('\n'),
