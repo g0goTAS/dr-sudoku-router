@@ -1,4 +1,3 @@
-from pygame import Vector2
 from positionUtils import getColumn, getRow
 
 A = '|    0,    0,    0,    0,.......A...|\n'
@@ -18,7 +17,7 @@ def generateInputsFromButtons(buttons, routedButtonIndexes):
     return generateInputs(grid, routedButtonIndexes)
 
 def generateInputs(grid, routedButtonIndexes, next_level=False):
-    currentLocation = Vector2(0, 0)
+    currentLocation = (0, 0)
     currentNumber = 5
     inputs = ''
     if not routedButtonIndexes:
@@ -27,7 +26,7 @@ def generateInputs(grid, routedButtonIndexes, next_level=False):
         indexInt = int(index)
         currNumber = grid[indexInt]
         x, y = getColumn(indexInt), getRow(indexInt)
-        nextLocation = Vector2(x, y)
+        nextLocation = (x, y)
         inputs += getInputsToNextSquare(currentLocation, nextLocation)
         inputs += getInputsToChooseNextNumber(currentNumber, int(currNumber))
         currentNumber = int(currNumber)
@@ -66,16 +65,16 @@ def getInputsToChooseNextNumber(currentNumber, nextNumber):
 
 
 def getInputsToNextSquare(currentLocation, nextLocation):
-    direction = Vector2((nextLocation.x - currentLocation.x + 9) % 9, (nextLocation.y - currentLocation.y + 9) % 9)
+    direction = ((nextLocation[0] - currentLocation[0] + 9) % 9, (nextLocation[1] - currentLocation[1] + 9) % 9)
     requiredInputs = []
-    if 5 > direction.x > 0:
-        requiredInputs.append([RIGHT, direction.x])
-    if 9 > direction.x > 4:
-        requiredInputs.append([LEFT, 9 - direction.x])
-    if 5 > direction.y > 0:
-        requiredInputs.append([DOWN, direction.y])
-    if 9 > direction.y > 4:
-        requiredInputs.append([UP, 9 - direction.y])
+    if 5 > direction[0] > 0:
+        requiredInputs.append([RIGHT, direction[0]])
+    if 9 > direction[0] > 4:
+        requiredInputs.append([LEFT, 9 - direction[0]])
+    if 5 > direction[1] > 0:
+        requiredInputs.append([DOWN, direction[1]])
+    if 9 > direction[1] > 4:
+        requiredInputs.append([UP, 9 - direction[1]])
 
     inputs = ''
     lastInput = None
