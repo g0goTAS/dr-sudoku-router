@@ -245,7 +245,6 @@ if __name__ == '__main__':
         paths = {}
     with open('puzzles.pkl', 'rb') as f:
         puzzles = pickle.load(f)
-    log_file = open('logs.txt', 'w+')
     for puzzle_idx in product(range(1, 21), range(1, 51)):
         if puzzle_idx in paths:
             continue
@@ -258,11 +257,13 @@ if __name__ == '__main__':
             print(e)
             continue
         paths[puzzle_idx] = idx_list
-        compute_time = st - time.time()
-        _ = log_file.write(
-            f'{puzzle_idx}: {info["n_paths"]} annealed found. '
-            f'{info["save_4opt"]} 4opt saved. {compute_time} s'
-            )
+        compute_time = time.time() - st
+        with open('logs.txt', 'a+') as log_file:
+            _ = log_file.write(
+                f'{puzzle_idx}: [{info["n_paths"]}] annealed found. '
+                f'[{info["save_4opt"]}] 4opt saved. '
+                f'[{compute_time:.0f}] s\n'
+                )
         with open('paths.pkl', 'wb') as f:
             pickle.dump(paths, f)
         # plot_path(idx_list)
