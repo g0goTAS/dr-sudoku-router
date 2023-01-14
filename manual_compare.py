@@ -30,7 +30,7 @@ for puzzle_idx, idx_list in paths.items():
     level_inputs = level_inputs[:level_inputs.index(level_trim)]
 
     old_inputs = ig.generateInputs(solution,
-                                     idx_list,
+                                     old_list,
                                      next_level=next_level)
     old_inputs = old_inputs[:old_inputs.index(level_trim)]
     compare_data[puzzle_idx] = (old_inputs.count('\n'),
