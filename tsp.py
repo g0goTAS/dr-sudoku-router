@@ -7,6 +7,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 from math import comb
+import random
 
 
 def computeGraph(grid, solution):
@@ -78,13 +79,15 @@ def plot_path(idx_list):
     plt.show()
 
 
-def kOpt(idx_list, graph, grid_to_graph, solution, k):
+def kOpt(idx_list, graph, grid_to_graph, solution, k, verbose=True):
     optis = []
     graph = {(i, j): graph[i, j]
              for i,j in product(range(graph.shape[0]), range(graph.shape[1]))}
     while True:
-        for indexes in tqdm(combinations(range(len(idx_list)), k),
-                            total=comb(len(idx_list), k)):
+        indexes_iter = combinations(range(len(idx_list)), k)
+        if verbose:
+            indexes_iter = tqdm(indexes_iter, total=comb(len(idx_list), k))
+        for indexes in indexes_iter:
             nodes = []
             for idx in indexes:
                 nodes += [idx-1, idx]
@@ -157,7 +160,8 @@ def kOpt(idx_list, graph, grid_to_graph, solution, k):
         nodes, save = sorted(optis, key = lambda x:-x[-1])[0]
         # TO-DO: We could use ALL compatible ones instead of the best each time (6-9)
         # Or pick the first we find by searching from longer indexes first
-        print(f'\tSaving {save} frame(s)')
+        if verbose:
+            print(f'\tSaving {save} frame(s)')
         new_list = idx_list[:nodes[0]+1]
         for i in range(len(nodes)//2):
             idx1, idx2 = nodes[2*i+1:2*i+3]
@@ -166,11 +170,12 @@ def kOpt(idx_list, graph, grid_to_graph, solution, k):
             else:
                 new_list += idx_list[idx1:idx2+1]
         idx_list = new_list[:]
-        print("\tNew total: {} frames".format(generateInputs(solution, idx_list).count("\n")))
+        if verbose:
+            print("\tNew total: {} frames".format(generateInputs(solution, idx_list).count("\n")))
         optis = []
     return idx_list
 
-def solvePath(grid, max_k=4):
+def solvePath(grid, max_k=4, n_thermal=100):
     solution = solve(grid)
     if '_' in solution:
         raise Exception('Puzzle not solved')
@@ -193,8 +198,20 @@ def solvePath(grid, max_k=4):
                 break
     idx_list = [graph_to_grid[i-1] for i in idx_list[1:]]
 
-    for k in range(2, max_k+1):
-        idx_list = kOpt(idx_list, graph, grid_to_graph, solution, k)
+    # Annealing filter for 3-opt
+    optimal_path = (idx_list, generateInputs(solution, idx_list).count("\n"))
+    print(f'Thermal annealing of {max_k-1}-opt')
+    for _ in tqdm(range(n_thermal)):
+        idx_list_shuffle = idx_list[:]
+        random.shuffle(idx_list_shuffle)
+        for k in range(2, max_k):
+            idx_list_shuffle = kOpt(idx_list_shuffle, graph, grid_to_graph, solution, k, verbose=False)
+        length = generateInputs(solution, idx_list_shuffle).count("\n")
+        if length < optimal_path[1]:
+            optimal_path = (idx_list_shuffle[:], length)
+
+    print(f'Single {max_k}-opt')
+    idx_list = kOpt(optimal_path[0], graph, grid_to_graph, solution, max_k)
     return idx_list
 
 

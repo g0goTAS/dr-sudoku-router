@@ -35,6 +35,7 @@ if __name__=='__main__':
                                          paths[puzzle_idx],
                                          next_level=next_level)
         all_inputs += level_inputs
+    # TRIM ENDING
     all_inputs += '[/Input]'
     with open('Input_Log.txt', 'w') as f:
         f.write(all_inputs[:-1])
