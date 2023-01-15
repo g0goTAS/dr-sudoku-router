@@ -1,4 +1,16 @@
-"""Traveling salesman problem solver."""
+"""Traveling salesman problem solver.
+
+To use, run
+    python tsp.py
+
+To run on a subset of puzzles, for example, levels 11 to 15 run
+    python tsp.py -s _11-15 -min 11 -max 15
+This allows for parallelization between machines, or a single machine
+when the command is ran in different shells/screens
+Be careful with the suffix (-s parameter) to make sure
+that files are not being overwritten by different threads.
+This code wasmade quickly, there are no checks to that effect.
+"""
 
 import pickle
 from itertools import product, combinations, permutations
@@ -12,6 +24,7 @@ from math import comb
 import random
 import time
 import os
+import argparse
 
 
 def plot_path(idx_list):
@@ -545,5 +558,37 @@ class TSPSolver():
 
 
 if __name__ == '__main__':
-    tsp = TSPSolver()
-    tsp.solve()
+    # Parser of the code's arguments
+    parser = argparse.ArgumentParser(
+        description='Parser for TSP solver'
+        )
+    # The date must correspond to *existing* sorted DBs on the GCP bucket.
+    # Normally this code happens at 2AM-UTC on a UTC server.
+    parser.add_argument("-s", "--suffix",
+                        help='suffix to add to checkpoint files',
+                        default='')
+    parser.add_argument("-min", "--minimum",
+                        help='minimum puzzle number',
+                        default='(1, 1)')
+    parser.add_argument("-max", "--maximum",
+                        help='maximum puzzle number',
+                        default='(20, 50)')
+    args = parser.parse_args()
+    suffix = args.suffix
+    min_puzzle = args.minimum
+    if isinstance(min_puzzle, str):
+        min_puzzle = eval(min_puzzle)
+    if isinstance(min_puzzle, int):
+        min_puzzle = (min_puzzle, 1)
+
+    max_puzzle = args.maximum
+    if isinstance(max_puzzle, str):
+        max_puzzle = eval(max_puzzle)
+    if isinstance(max_puzzle, int):
+        max_puzzle = (max_puzzle, 50)
+
+    print(f'Computing TSP on puzzles {min_puzzle} to {max_puzzle}. '
+          f'file_suffix: {suffix}')
+    tsp = TSPSolver(suffix=suffix)
+    tsp.solve(min_puzzle=min_puzzle,
+              max_puzzle=max_puzzle)
