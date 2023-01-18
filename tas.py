@@ -1,3 +1,8 @@
+"""Generating TAS input file from the TSP solutions.
+
+Make sure to run tsp.py to generate paths.pkl
+"""
+
 from solver import solve
 from tsp import puzzle_to_string
 import pickle

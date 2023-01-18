@@ -19,6 +19,8 @@ manual_data = manual_data.split(level_split)
 # COMPARE TO OLD TSP
 compare_data = {}
 for puzzle_idx, idx_list in paths.items():
+    if puzzle_idx not in paths_old:
+        continue
     grid = puzzle_to_string(puzzles[puzzle_idx])
     solution = solve(grid, verbose=False)
     next_level = puzzle_idx[1] == 50
@@ -37,7 +39,8 @@ for puzzle_idx, idx_list in paths.items():
                                 level_inputs.count('\n'))
 
 for p, (g, l) in compare_data.items():
-    print(p, '\t', g-l, '\t', l, '\t', g)
+    if g-l != 0:
+        print(p, '\t', g-l, '\t', l, '\t', g)
 print('TOTAL SAVED', sum(g-l for (g, l) in compare_data.values()))
 
 

@@ -1,16 +1,4 @@
-"""Traveling salesman problem solver.
-
-To use, run
-    python tsp.py
-
-To run on a subset of puzzles, for example, levels 11 to 15 run
-    python tsp.py -s _11-15 -min 11 -max 15
-This allows for parallelization between machines, or a single machine
-when the command is ran in different shells/screens
-Be careful with the suffix (-s parameter) to make sure
-that files are not being overwritten by different threads.
-This code wasmade quickly, there are no checks to that effect.
-"""
+"""Traveling salesman problem solver."""
 
 import pickle
 from itertools import product, combinations, permutations
@@ -75,6 +63,40 @@ def puzzle_to_string(puzzle):
             char = '_'
         grid += char
     return grid
+
+
+def permute_list(idx_list, nodes):
+    """Permute list according to k-opt optimisation.
+
+    Parameters
+    ----------
+    idx_list: list of int
+        The path is a list of the sudoku grid index
+        (from 0 to 80) starting from top left and going
+        horizontally, then vertically.
+
+    nodes: list of int
+        List of vertices to swap.
+        This list comes in pairs, which are the sections of idx_list
+        to merge together.
+        The first element is paired with an unmoving origin.
+        i.e.: nodes = [10, 20, 11] will permute idx_list this way:
+              take the first 10 elements of the list, then the last 10 elements
+              in reverse order -> idx_list[:11] + idx_list[11:20][::-1]
+
+    Returns
+    -------
+    list of int
+        The new permuted idx_list
+    """
+    new_list = idx_list[:nodes[0]+1]
+    for i in range(len(nodes)//2):
+        idx1, idx2 = nodes[2*i+1:2*i+3]
+        if idx1 > idx2:
+            new_list += idx_list[idx2:idx1+1][::-1]
+        else:
+            new_list += idx_list[idx1:idx2+1]
+    return new_list
 
 
 class TSPSolver():
@@ -243,7 +265,7 @@ class TSPSolver():
         """Compute distance matrix of current puzzle.
 
         Will use self.grid to compute
-        self.grid_to_node adn self.node_to_grid
+        self.grid_to_node and self.node_to_grid
         """
         self.node_to_grid = {}
         i_g = -1
@@ -296,6 +318,8 @@ class TSPSolver():
               idx_list,
               k,
               lock_end=False,
+              only_best=True,
+              quick_pick=False,
               verbose=True):
         """Perform k-opt optimisation on a given path solution.
 
@@ -314,6 +338,17 @@ class TSPSolver():
             if the the end itself
             (i.e. effectively moving the end node on (k-1) opt)
             Default is False.
+
+        only_best: bool, optional
+            If True, will only take the best k-opt optimisation
+            for each pass, and then redo the analysis on the new path.
+            If False, will do all compatible optimisations at once
+            before redoing the analysis.
+            Default is True
+
+        quick_pick: bool, optional
+            If True, will apply an optimisation as soon as one is found.
+            Default is False
 
         verbose: bool, optional
             If True, will print progress and updates on screen.
@@ -408,24 +443,44 @@ class TSPSolver():
                         if keep_end:
                             new_nodes += nodes[-2:]
                         optis.append((new_nodes, save))
+                        if quick_pick:
+                            break
+                if quick_pick and len(optis) > 0:
+                    break
 
             # If no optimisations are found, break the while True loop
             if len(optis) == 0:
                 break
 
+            optis = sorted(optis, key=lambda x: -x[-1])
             # Performing the best optimisation of the list,
             # then do the analysis again.
-            nodes, save = sorted(optis, key=lambda x: -x[-1])[0]
-            if verbose:
-                print(f'\tSaving {save} frame(s)')
-            new_list = idx_list[:nodes[0]+1]
-            for i in range(len(nodes)//2):
-                idx1, idx2 = nodes[2*i+1:2*i+3]
-                if idx1 > idx2:
-                    new_list += idx_list[idx2:idx1+1][::-1]
-                else:
-                    new_list += idx_list[idx1:idx2+1]
-            idx_list = new_list[:]
+            if only_best:
+                optis = optis[:1]
+
+            used_idx = []
+            default_list = list(range(len(idx_list)))
+            while True:
+                opti_found = False
+                for nodes, save in optis:
+                    if all(n not in used_idx for n in nodes):
+                        opti_found = True
+                        break
+                if not opti_found:
+                    break
+                used_idx += nodes
+                real_nodes = []
+                if nodes[0] == -1:
+                    nodes = nodes[1:]
+                    real_nodes = [-1]
+                real_nodes += [default_list.index(n) for n in nodes]
+                default_list = permute_list(default_list, real_nodes)
+                idx_list = permute_list(idx_list, real_nodes)
+
+                if verbose:
+                    print(f'\tPerforming {k}-opt optimisation '
+                          f'saving {save} frame(s)')
+
             if verbose:
                 length = self.get_length(idx_list)
                 print(f"\tNew total: {length} frames")
@@ -458,23 +513,41 @@ class TSPSolver():
 
         """
         idx_list = self.get_nn_path()
+        for k in range(2, 4):
+            idx_list = self.k_opt(idx_list, k, verbose=False)
         optimal_length = self.get_length(idx_list)
-        optimal_paths = [idx_list]
+        optimal_paths = [idx_list[:]]
 
         print(f'Random starts on 3-opt')
         for _ in tqdm(range(n_thermal)):
-            idx_list_shuffle = idx_list[:]
-            random.shuffle(idx_list_shuffle)
+            random.shuffle(idx_list)
             for k in range(2, 4):
-                idx_list_shuffle = \
-                    self.k_opt(idx_list_shuffle, k, verbose=False)
-            length = self.get_length(idx_list_shuffle)
+                idx_list = self.k_opt(idx_list, k, verbose=False)
+            length = self.get_length(idx_list)
             if length == optimal_length:
-                optimal_paths.append(idx_list_shuffle[:])
+                optimal_paths.append(idx_list[:])
             if length < optimal_length:
                 optimal_length = length
-                optimal_paths = [idx_list_shuffle[:]]
+                optimal_paths = [idx_list[:]]
         return optimal_paths
+
+    def set_puzzle(self, puzzle_idx):
+        """Set all attributes necessary for a puzzle computation.
+
+        Will set self.grid, self.solution, self.distance,
+        self.dict_distance, self.grid_to_node and self.node_to_grid
+
+        Parameters
+        ----------
+        puzzle_idx: (int, int)
+        """
+        self.puzzle_idx = puzzle_idx
+        self.grid = puzzle_to_string(self.puzzles[puzzle_idx])
+        self.solution = solve(self.grid, verbose=False)
+        if '_' in self.solution:
+            raise Exception('Puzzle not solved')
+        self.compute_distance()
+        self.compute_idx()
 
     def solve_next(self):
         """Solves the next available puzzle to solve.
@@ -497,15 +570,9 @@ class TSPSolver():
             break
         if not puzzle_found:
             return False
-        self.puzzle_idx = puzzle_idx
         print(f'Solving puzzle {puzzle_idx}')
 
-        self.grid = puzzle_to_string(self.puzzles[puzzle_idx])
-        self.solution = solve(self.grid, verbose=False)
-        if '_' in self.solution:
-            raise Exception('Puzzle not solved')
-        self.compute_distance()
-        self.compute_idx()
+        self.set_puzzle(puzzle_idx)
 
         # Compute random guesses optimisation
         first_paths = self.random_starts()
