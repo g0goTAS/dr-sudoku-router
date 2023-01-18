@@ -1,3 +1,12 @@
+"""Imports sudoku puzzles in machine readable format
+
+Works if screen is top left of desktop on OpenEmu in x2 scaling
+
+run python ocr.py to take a snapshot of the puzzle on screen
+and add it to puzzle.pkl
+Make sure the puzzle on screen are shown in order.
+"""
+
 # import cv2
 from mss import mss
 import numpy as np
@@ -6,8 +15,8 @@ import pickle
 from itertools import product
 # import os
 
-# Works if screen is top left on OpenEmu in x2 scaling
 """
+# Generate numbers pixel data numbers.pkl from first puzzle
 sct = mss()
 bounding_box = {'top': 44, 'left': 0, 'width': 480, 'height': 320}
 img_grid = np.array(sct.grab(bounding_box))
@@ -26,20 +35,22 @@ with open('numbers.pkl', 'rb') as f:
 with open('puzzles.pkl', 'rb') as f:
     puzzles = pickle.load(f)
 
+
 def get_grid():
     sct = mss()
     bounding_box = {'top': 44, 'left': 0, 'width': 480, 'height': 320}
     img_grid = np.array(sct.grab(bounding_box))
-    grid = np.zeros((9,9), dtype=int)
+    grid = np.zeros((9, 9), dtype=int)
     for x, y in product(range(9), range(9)):
         img = img_grid[17+32*y:47+32*y, 16+32*x:46+32*x]
         matches = [abs(img[4:-4, 4:-4] - numbers[n][4:-4, 4:-4]).sum()
-                for n in range(10)]
+                   for n in range(10)]
         match = np.argmin(matches)
         if matches[match] != 0:
             raise Exception('No perfect matches found.')
         grid[y, x] = match
     return grid
+
 
 if __name__ == '__main__':
     level = max(puzzles)
