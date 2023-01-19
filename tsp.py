@@ -187,6 +187,10 @@ class TSPSolver():
         If True, will perform a final 4opt step
         on the best 3opt solution.
 
+    n_random: int, optional
+        Number of random starting guesses.
+        Default is 100.
+
     puzzle_index: (int, int)
         Puzzle index that is currently being solved.
         First element is level (between 1 and 20)
@@ -302,7 +306,8 @@ class TSPSolver():
         return idx_list
 
     def get_length(self,
-                   idx_list):
+                   idx_list,
+                   puzzle_idx=None):
         """Compute number of frames of a certain path.
 
         Parameters
@@ -312,10 +317,16 @@ class TSPSolver():
             (from 0 to 80) starting from top left and going
             horizontally, then vertically.
 
+        puzzle_idx: (int, int)
+            If specified, will run self.set_puzzle(puzzle_idx),
+            If None, will assume this step was already done
+
         Returns
         -------
         int
         """
+        if puzzle_idx is not None:
+            self.set_puzzle(puzzle_idx)
         return generateInputs(self.solution, idx_list).count("\n")
 
     def k_opt(self,
@@ -491,21 +502,13 @@ class TSPSolver():
             optis = []
         return idx_list
 
-    def random_starts(self, n_thermal=100):
+    def random_starts(self):
         """Perform random starting position and picks best 3-opt optis.
 
         Will also add a nearest neighbour start as a first benchmark.
 
         Will perform 3-opt optimisation on all guesses and return the
         best optimised path.
-
-        Will return
-
-        Parameters
-        ----------
-        n_thermal: int, optional
-            Number of random starting guesses.
-            Default is 100.
 
         Returns
         -------
@@ -514,7 +517,6 @@ class TSPSolver():
             The path is a list of the sudoku grid index
             (from 0 to 80) starting from top left and going
             horizontally, then vertically.
-
         """
         idx_list = self.get_nn_path()
         for k in range(2, 4):
@@ -523,7 +525,7 @@ class TSPSolver():
         optimal_paths = [idx_list[:]]
 
         print(f'Random starts on 3-opt')
-        for _ in tqdm(range(n_thermal)):
+        for _ in tqdm(range(self.n_random)):
             random.shuffle(idx_list)
             for k in range(2, 4):
                 idx_list = self.k_opt(idx_list, k, verbose=False)
@@ -610,7 +612,8 @@ class TSPSolver():
     def solve(self,
               min_puzzle=(1, 1),
               max_puzzle=(20, 50),
-              with_4opt=True):
+              with_4opt=True,
+              n_random=100):
         """Solve the TSP for all specified puzzles.
 
         min_puzzle: (int, int), optional
@@ -629,11 +632,16 @@ class TSPSolver():
             If True, will perform a final 4opt step
             on the best solution.
             Default is True.
+
+        n_random: int, optional
+            Number of random starting guesses.
+            Default is 100.
         """
         self.min_puzzle = min_puzzle
         self.max_puzzle = max_puzzle
         self.with_4opt = with_4opt
         solving_flag = True
+        self.n_random = n_random
         while solving_flag:
             solving_flag = self.solve_next()
 
