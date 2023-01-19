@@ -183,6 +183,10 @@ class TSPSolver():
         Second element is number (between 1 and 50)
         Default is (20, 50)
 
+    with_4opt: bool
+        If True, will perform a final 4opt step
+        on the best 3opt solution.
+
     puzzle_index: (int, int)
         Puzzle index that is currently being solved.
         First element is level (between 1 and 20)
@@ -580,10 +584,13 @@ class TSPSolver():
 
         # Compute final 4-opt optimisation
         idx_list = first_paths[0]
-        length_3opt = self.get_length(idx_list)
-        idx_list = self.k_opt(first_paths[0], 4, verbose=True)
+        if self.with_4opt:
+            length_3opt = self.get_length(idx_list)
+            idx_list = self.k_opt(idx_list, 4, verbose=True)
+            diff_4opt = length_3opt - self.get_length(idx_list)
+        else:
+            diff_4opt = 'X'
         self.paths[puzzle_idx] = idx_list
-        diff_4opt = self.get_length(idx_list) - length_3opt
         compute_time = time.time() - compute_time
 
         # Logging
@@ -602,7 +609,8 @@ class TSPSolver():
 
     def solve(self,
               min_puzzle=(1, 1),
-              max_puzzle=(20, 50)):
+              max_puzzle=(20, 50),
+              with_4opt=True):
         """Solve the TSP for all specified puzzles.
 
         min_puzzle: (int, int), optional
@@ -616,9 +624,15 @@ class TSPSolver():
             First element is level (between 1 and 20)
             Second element is number (between 1 and 50)
             Default is (20, 50)
+
+        with_4opt: bool, optional
+            If True, will perform a final 4opt step
+            on the best solution.
+            Default is True.
         """
         self.min_puzzle = min_puzzle
         self.max_puzzle = max_puzzle
+        self.with_4opt = with_4opt
         solving_flag = True
         while solving_flag:
             solving_flag = self.solve_next()
