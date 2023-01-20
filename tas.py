@@ -39,8 +39,12 @@ if __name__ == '__main__':
         level_inputs = ig.generateInputs(solution,
                                          paths[puzzle_idx],
                                          next_level=next_level)
+        # TRIM ENDING
+        if puzzle_idx == (20, 50):
+            level_inputs = '\n'.join(
+                level_inputs.split('\n')[:-213]
+                ) + '\n'
         all_inputs += level_inputs
-    # TRIM ENDING
     all_inputs += '[/Input]'
     with open('Input_Log.txt', 'w') as f:
         f.write(all_inputs[:-1])
