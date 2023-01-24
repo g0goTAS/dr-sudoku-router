@@ -612,7 +612,7 @@ class TSPSolver():
     def solve(self,
               min_puzzle=(1, 1),
               max_puzzle=(20, 50),
-              with_4opt=True,
+              with_4opt=False,
               n_random=100):
         """Solve the TSP for all specified puzzles.
 
@@ -662,9 +662,13 @@ if __name__ == '__main__':
     parser.add_argument("-max", "--maximum",
                         help='maximum puzzle number',
                         default='(20, 50)')
+    parser.add_argument("-r", "--random",
+                        help='Number of random guesses',
+                        default=100)
     args = parser.parse_args()
     suffix = args.suffix
     min_puzzle = args.minimum
+    n_random = args.random
     if isinstance(min_puzzle, str):
         min_puzzle = eval(min_puzzle)
     if isinstance(min_puzzle, int):
@@ -676,8 +680,12 @@ if __name__ == '__main__':
     if isinstance(max_puzzle, int):
         max_puzzle = (max_puzzle, 50)
 
+    if isinstance(n_random, str):
+        n_random = eval(n_random)
+
     print(f'Computing TSP on puzzles {min_puzzle} to {max_puzzle}. '
           f'file_suffix: {suffix}')
     tsp = TSPSolver(suffix=suffix)
     tsp.solve(min_puzzle=min_puzzle,
-              max_puzzle=max_puzzle)
+              max_puzzle=max_puzzle,
+              n_random=n_random)
