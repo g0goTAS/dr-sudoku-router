@@ -13,8 +13,8 @@ from tqdm import tqdm
 if __name__ == '__main__':
 
     all_inputs = """[Input]
-    LogKey:#Tilt X|Tilt Y|Tilt Z|Light Sensor|Up|Down|Left|Right|Start|Select|B|A|L|R|Power|
-    """
+LogKey:#Tilt X|Tilt Y|Tilt Z|Light Sensor|Up|Down|Left|Right|Start|Select|B|A|L|R|Power|
+"""
     all_inputs += ig.NOTHING * 799
     all_inputs += ig.A
     all_inputs += ig.START
