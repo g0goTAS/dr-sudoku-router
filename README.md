@@ -5,7 +5,7 @@ Made by g0goTBC and Lightmopp.
 # How to run the different sections?
 
 ## tsp.py
-This file calculates the fastest paths for each of the puzzles. It generates a .pxl file containing the fastest paths, and a .txt file containing logs about the results.
+This file calculates the fastest paths for each of the puzzles. It contains the meat of the computation, performing traveling salesman algorithms. It generates a pickle .pkl file containing the fastest paths, and a .txt file containing some logs about the results. See docstrings within this file for more information.
 
 Here's the optional parameters that it can take:
 
@@ -17,20 +17,18 @@ the ending point of the calculation process (inclusive). Can specify a level (fo
 
 ### -s
 A suffix to be added to the name of the output files.
-The following command
-
-tsp.py -s "_example"
-
-will generate the 2 output files with the names "paths_example.pxl" and "logs_example.txt"
+The following command:
+`python tsp.py -s "_example"`
+will generate the 2 output files with the names "paths_example.pkl" and "logs_example.txt"
 
 ### -r
-specifies the number of random starts that are used. The default value is 100.
+Specifies the number of random starts that are used. The default value is 100.
 
 ## merge_paths.py
-This file combines all the path files (with the .pxl extension) in the current directory into one.
+This file combines all the path files (with the .pkl extension) in the current directory into a single file.
 
 ## tas.py
 Generates the Input_Log.txt contained in bk2 and tasproj files based on the path file.
 
 ## router.py
-The ooriginal program used by g0goTBC to solve puzzles manually.
+The original program used by g0goTBC to solve puzzles manually.
