@@ -5,7 +5,7 @@ from positionUtils import getColumn, getRow, getCage, getSpot
 ALL_NUMBERS = ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
 
 
-def solve(grid):
+def solve(grid, verbose=True):
     potentialNumberList = initialiseRemainingNumberList(grid)
     changeInLastIteration = True
     iterationCount = 0
@@ -19,11 +19,23 @@ def solve(grid):
         potentialNumberList, intermediateColumnSolveChange = intermediateSolvePerColumn(potentialNumberList)
         potentialNumberList, xWingRowChange = xWingByRow(potentialNumberList)
         potentialNumberList, xWingColumnChange = xWingByColumn(potentialNumberList)
+        potentialNumberList, pointingPairsByRowChange = pointingPairsByRow(potentialNumberList)
+        potentialNumberList, pointingPairsByColumnChange = pointingPairsByColumn(potentialNumberList)
+        potentialNumberList, nakedPairsByColumnChange = nakedPairsByColumn(potentialNumberList)
+        potentialNumberList, nakedPairsByRowChange = nakedPairsByRow(potentialNumberList)
+        potentialNumberList, nakedPairsByCageChange = nakedPairsByCage(potentialNumberList)
+        potentialNumberList, nakedTripleByCageChange = nakedTripleByCage(potentialNumberList)
+        potentialNumberList, hiddenPairByColumnChange = hiddenPairsByColumn(potentialNumberList)
+        potentialNumberList, hiddenPairByRowChange = hiddenPairsByRow(potentialNumberList)
+        changeInLastIteration = squareSolveChange or rowSolveChange or columnSolveChange or cageSolveChange or intermediateRowSolveChange or intermediateColumnSolveChange or xWingRowChange or xWingColumnChange or pointingPairsByRowChange or pointingPairsByColumnChange or nakedPairsByColumnChange or nakedPairsByRowChange or nakedPairsByCageChange or nakedTripleByCageChange or hiddenPairByColumnChange or hiddenPairByRowChange
 
-        changeInLastIteration = squareSolveChange or rowSolveChange or columnSolveChange or cageSolveChange or intermediateRowSolveChange or intermediateColumnSolveChange or xWingRowChange or xWingColumnChange
-
-        print("\n" + str(iterationCount))
-        print(gridToString(potentialNumberList))
+        gridString = gridToString(potentialNumberList)
+        if not changeInLastIteration and gridString.count("_") != 0 and verbose:
+            for i in range(0, 81):
+                print(potentialNumberList[i])
+        if verbose:
+            print("\n" + str(iterationCount))
+            print(gridString)
     return gridToString(potentialNumberList)
 
 
@@ -35,6 +47,205 @@ def gridToString(grid):
         else:
             formattedGrid.append("_")
     return "".join(formattedGrid)
+
+
+def hiddenPairsByColumn(potentialNumberList):
+    change = False
+    solvedPotentialNumberList = deepcopy(potentialNumberList)
+
+    for scanColumn in range(0, 9):
+        for number1 in range(0, 8):
+            number1 = str(number1)
+            spotsNumber1 = []
+            for scanRow in range(0, 9):
+                if number1 in solvedPotentialNumberList[getSpot(scanColumn, scanRow)]:
+                    spotsNumber1.append(getSpot(scanColumn, scanRow))
+            if len(spotsNumber1) != 2:
+                continue
+            for number2 in range(int(number1) + 1, 9):
+                spotsNumber2 = []
+                number2 = str(number2)
+                for scanRow in range(0, 9):
+                    if number2 in solvedPotentialNumberList[getSpot(scanColumn, scanRow)]:
+                        spotsNumber2.append(getSpot(scanColumn, scanRow))
+                if len(spotsNumber2) != 2:
+                    continue
+                if spotsNumber1 != spotsNumber2:
+                    continue
+                for eliminationNumber in range(0, 9):
+                    eliminationNumber = str(eliminationNumber)
+                    if eliminationNumber == number1 or eliminationNumber == number2:
+                        continue
+                    for eliminationSpot in spotsNumber1:
+                        if eliminationNumber in solvedPotentialNumberList[eliminationSpot]:
+                            solvedPotentialNumberList[eliminationSpot].remove(eliminationNumber)
+                            change = True
+    return solvedPotentialNumberList, change
+
+def hiddenPairsByRow(potentialNumberList):
+    change = False
+    solvedPotentialNumberList = deepcopy(potentialNumberList)
+
+    for scanRow in range(0, 9):
+        for number1 in range(0, 8):
+            number1 = str(number1)
+            spotsNumber1 = []
+            for scanColumn in range(0, 9):
+                if number1 in solvedPotentialNumberList[getSpot(scanColumn, scanRow)]:
+                    spotsNumber1.append(getSpot(scanColumn, scanRow))
+            if len(spotsNumber1) != 2:
+                continue
+            for number2 in range(int(number1) + 1, 9):
+                spotsNumber2 = []
+                number2 = str(number2)
+                for scanColumn in range(0, 9):
+                    if number2 in solvedPotentialNumberList[getSpot(scanColumn, scanRow)]:
+                        spotsNumber2.append(getSpot(scanColumn, scanRow))
+                if len(spotsNumber2) != 2:
+                    continue
+                if spotsNumber1 != spotsNumber2:
+                    continue
+                for eliminationNumber in range(0, 9):
+                    eliminationNumber = str(eliminationNumber)
+                    if eliminationNumber == number1 or eliminationNumber == number2:
+                        continue
+                    for eliminationSpot in spotsNumber1:
+                        if eliminationNumber in solvedPotentialNumberList[eliminationSpot]:
+                            solvedPotentialNumberList[eliminationSpot].remove(eliminationNumber)
+                            change = True
+    return solvedPotentialNumberList, change
+
+
+
+
+
+def nakedPairsByColumn(potentialNumberList, verbose=True):
+    change = False
+    solvedPotentialNumberList = deepcopy(potentialNumberList)
+    for scanColumn in range(0, 9):
+        for scanRow in range(0, 8):
+            spot = getSpot(scanColumn, scanRow)
+            if len(solvedPotentialNumberList[spot]) == 2:
+                for matchPairRow in range(scanRow + 1, 9):
+                    matchSpot = getSpot(scanColumn, matchPairRow)
+                    if solvedPotentialNumberList[spot] == solvedPotentialNumberList[matchSpot]:
+                        for eliminationRow in range(0, 9):
+                            eliminationSpot = getSpot(scanColumn, eliminationRow)
+                            if eliminationSpot not in [spot, matchSpot]:
+                                for number in solvedPotentialNumberList[spot]:
+                                    if number in solvedPotentialNumberList[eliminationSpot]:
+                                        solvedPotentialNumberList[eliminationSpot].remove(number)
+                                        change = True
+    return solvedPotentialNumberList, change
+
+def nakedTripleByCage(potentialNumberList):
+    change = False
+    solvedPotentialNumberList = deepcopy(potentialNumberList)
+    for cage in range(0, 9):
+        triplesForCage = []
+        for i in range(0, 81):
+            if getCage(i) == cage and len(solvedPotentialNumberList[i]) == 3:
+                triplesForCage.append(solvedPotentialNumberList[i])
+        for triple in triplesForCage:
+            if triplesForCage.count(triple) == 3:
+                for i in range(0, 81):
+                    if getCage(i) == cage and solvedPotentialNumberList[i] != triple:
+                        for number in triple:
+                            if number in solvedPotentialNumberList[i]:
+                                solvedPotentialNumberList[i].remove(number)
+                                change = True
+    return solvedPotentialNumberList, change
+
+
+def nakedPairsByCage(potentialNumberList):
+    change = False
+    solvedPotentialNumberList = deepcopy(potentialNumberList)
+    for i in range(0, 80):
+        if len(solvedPotentialNumberList[i]) != 2:
+            continue
+        for j in range(i + 1, 81):
+            if len(solvedPotentialNumberList[j]) != 2:
+                continue
+            if getCage(i) != getCage(j):
+                continue
+            if solvedPotentialNumberList[i] != solvedPotentialNumberList[j]:
+                continue
+            if i == j:
+                continue
+            for k in range(0, 81):
+                if k == i or k == j:
+                    continue
+                if getCage(k) != getCage(i):
+                    continue
+                for number in solvedPotentialNumberList[i]:
+                    if number in solvedPotentialNumberList[k]:
+                        solvedPotentialNumberList[k].remove(number)
+                        change = True
+    return solvedPotentialNumberList, change
+
+
+def nakedPairsByRow(potentialNumberList, verbose=True):
+    change = False
+    solvedPotentialNumberList = deepcopy(potentialNumberList)
+    for scanRow in range(0, 9):
+        for scanColumn in range(0, 8):
+            spot = getSpot(scanColumn, scanRow)
+            if len(solvedPotentialNumberList[spot]) == 2:
+                for matchPairColumn in range(scanColumn + 1, 9):
+                    matchSpot = getSpot(matchPairColumn, scanRow)
+                    if solvedPotentialNumberList[spot] == solvedPotentialNumberList[matchSpot]:
+                        for eliminationColumn in range(0, 9):
+                            eliminationSpot = getSpot(eliminationColumn, scanRow)
+                            if eliminationSpot not in [spot, matchSpot]:
+                                for number in solvedPotentialNumberList[spot]:
+                                    if number in solvedPotentialNumberList[eliminationSpot]:
+                                        solvedPotentialNumberList[eliminationSpot].remove(number)
+                                        change = True
+    return solvedPotentialNumberList, change
+
+
+def pointingPairsByRow(potentialNumberList, verbose=True):
+    change = False
+    solvedPotentialNumberList = deepcopy(potentialNumberList)
+    for number in ALL_NUMBERS:
+        for scanRow in range(0, 9):
+            possibleCages = []
+            for scanColumn in range(0, 9):
+                if number in solvedPotentialNumberList[getSpot(scanColumn, scanRow)]:
+                    currentCage = getCage(getSpot(scanColumn, scanRow))
+                    if currentCage not in possibleCages:
+                        possibleCages.append(currentCage)
+            if len(possibleCages) == 1:
+                for i in range(0, 81):
+                    if getCage(i) == possibleCages[0] and not getRow(i) == scanRow and number in \
+                            solvedPotentialNumberList[i]:
+                        if i == 10 and number == 3 and verbose:
+                            print("e")
+                        solvedPotentialNumberList[i].remove(number)
+                        change = True
+    return solvedPotentialNumberList, change
+
+
+def pointingPairsByColumn(potentialNumberList, verbose=True):
+    change = False
+    solvedPotentialNumberList = deepcopy(potentialNumberList)
+    for number in ALL_NUMBERS:
+        for scanColumn in range(0, 9):
+            possibleCages = []
+            for scanRow in range(0, 9):
+                if number in solvedPotentialNumberList[getSpot(scanColumn, scanRow)]:
+                    currentCage = getCage(getSpot(scanColumn, scanRow))
+                    if currentCage not in possibleCages:
+                        possibleCages.append(currentCage)
+            if len(possibleCages) == 1:
+                for i in range(0, 81):
+                    if getCage(i) == possibleCages[0] and not getColumn(i) == scanColumn and number in \
+                            solvedPotentialNumberList[i]:
+                        if i == 10 and number == 3 and verbose:
+                            print("f")
+                        solvedPotentialNumberList[i].remove(number)
+                        change = True
+    return solvedPotentialNumberList, change
 
 
 def xWingByRow(potentialNumberList):
@@ -92,13 +303,13 @@ def intermediateSolvePerRow(potentialNumberList):
         for number in getUnsolvedNumbersInCage(solvedPotentialNumberList, cage):
             possibleRows = []
             for i in range(0, 81):
-                if getCage(i) and number in solvedPotentialNumberList[i] and getRow(i) not in possibleRows:
+                if getCage(i) == cage and number in solvedPotentialNumberList[i] and getRow(i) not in possibleRows:
                     possibleRows.append(getRow(i))
 
             if len(possibleRows) == 1:
                 for i in range(0, 81):
                     if getRow(i) == possibleRows[0] and getCage(i) != cage and number in solvedPotentialNumberList[i]:
-                        solvedPotentialNumberList.remove(i)
+                        solvedPotentialNumberList[i].remove(number)
                         change = True
     return solvedPotentialNumberList, change
 
@@ -110,14 +321,15 @@ def intermediateSolvePerColumn(potentialNumberList):
         for number in getUnsolvedNumbersInCage(solvedPotentialNumberList, cage):
             possibleColumns = []
             for i in range(0, 81):
-                if getCage(i) and number in solvedPotentialNumberList[i] and getColumn(i) not in possibleColumns:
+                if getCage(i) == cage and number in solvedPotentialNumberList[i] and getColumn(
+                        i) not in possibleColumns:
                     possibleColumns.append(getColumn(i))
 
             if len(possibleColumns) == 1:
                 for i in range(0, 81):
                     if getColumn(i) == possibleColumns[0] and getCage(i) != cage and number in \
                             solvedPotentialNumberList[i]:
-                        solvedPotentialNumberList.remove(i)
+                        solvedPotentialNumberList[i].remove(number)
                         change = True
     return solvedPotentialNumberList, change
 
@@ -204,9 +416,10 @@ def solvePerSquare(potentialNumberList):
     for i in range(0, 81):
         if len(solvedPotentialNumberList[i]) > 1:
             newList = getPotentialNumberList(solvedPotentialNumberList, i)
-            if len(newList) < len(solvedPotentialNumberList[i]):
-                solvedPotentialNumberList[i] = newList
-                change = True
+            for number in ALL_NUMBERS:
+                if number in potentialNumberList[i] and number not in newList:
+                    solvedPotentialNumberList[i].remove(number)
+                    change = True
     return solvedPotentialNumberList, change
 
 

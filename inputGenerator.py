@@ -1,6 +1,8 @@
-from pygame import Vector2
+from positionUtils import getColumn, getRow
 
 A = '|    0,    0,    0,    0,.......A...|\n'
+R = '|    0,    0,    0,    0,.........r.|\n'
+START = '|    0,    0,    0,    0,....S......|\n'
 LEFT = '|    0,    0,    0,    0,..L........|\n'
 RIGHT = '|    0,    0,    0,    0,...R.......|\n'
 UP = '|    0,    0,    0,    0,U..........|\n'
@@ -8,27 +10,37 @@ DOWN = '|    0,    0,    0,    0,.D.........|\n'
 NOTHING = '|    0,    0,    0,    0,...........|\n'
 
 
-def generateInputs(buttons, routedButtonIndexes):
-    currentLocation = Vector2(0, 0)
+def generateInputsFromButtons(buttons, routedButtonIndexes):
+    grid = ""
+    for button in buttons:
+        grid += button.text if button.text else "_"
+    return generateInputs(grid, routedButtonIndexes)
+
+def generateInputs(grid, routedButtonIndexes, next_level=False):
+    currentLocation = (0, 0)
     currentNumber = 5
     inputs = ''
     if not routedButtonIndexes:
         return inputs
     for index in routedButtonIndexes:
-        button = list(filter(lambda searchButton: searchButton.index == index, buttons))[0]
-        nextLocation = Vector2(button.x, button.y)
+        indexInt = int(index)
+        currNumber = grid[indexInt]
+        x, y = getColumn(indexInt), getRow(indexInt)
+        nextLocation = (x, y)
         inputs += getInputsToNextSquare(currentLocation, nextLocation)
-        inputs += getInputsToChooseNextNumber(currentNumber, int(button.text))
-        currentNumber = int(button.text)
+        inputs += getInputsToChooseNextNumber(currentNumber, int(currNumber))
+        currentNumber = int(currNumber)
         currentLocation = nextLocation
 
-    if len(list(filter(lambda button: button.text, buttons))) == len(routedButtonIndexes):
-        inputs += NOTHING * 3
-        inputs += A
-        inputs += NOTHING * 73
-        inputs += A
-        inputs += NOTHING * 129
-        inputs += A
+    inputs += NOTHING * 3
+    inputs += A
+    inputs += NOTHING * 73
+    if next_level:
+        inputs += R
+    inputs += A
+    inputs += NOTHING * 129
+    inputs += A
+    inputs += NOTHING * 2
     return inputs
 
 
@@ -53,16 +65,16 @@ def getInputsToChooseNextNumber(currentNumber, nextNumber):
 
 
 def getInputsToNextSquare(currentLocation, nextLocation):
-    direction = Vector2((nextLocation.x - currentLocation.x + 9) % 9, (nextLocation.y - currentLocation.y + 9) % 9)
+    direction = ((nextLocation[0] - currentLocation[0] + 9) % 9, (nextLocation[1] - currentLocation[1] + 9) % 9)
     requiredInputs = []
-    if 5 > direction.x > 0:
-        requiredInputs.append([RIGHT, direction.x])
-    if 9 > direction.x > 4:
-        requiredInputs.append([LEFT, 9 - direction.x])
-    if 5 > direction.y > 0:
-        requiredInputs.append([DOWN, direction.y])
-    if 9 > direction.y > 4:
-        requiredInputs.append([UP, 9 - direction.y])
+    if 5 > direction[0] > 0:
+        requiredInputs.append([RIGHT, direction[0]])
+    if 9 > direction[0] > 4:
+        requiredInputs.append([LEFT, 9 - direction[0]])
+    if 5 > direction[1] > 0:
+        requiredInputs.append([DOWN, direction[1]])
+    if 9 > direction[1] > 4:
+        requiredInputs.append([UP, 9 - direction[1]])
 
     inputs = ''
     lastInput = None
